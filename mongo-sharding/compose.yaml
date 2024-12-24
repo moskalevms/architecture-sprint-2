@@ -1,0 +1,100 @@
+name: mongo-sharding
+services:
+  config_server:
+    container_name: config_server
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: [
+      "mongod", "--configsvr",
+      "--replSet", "configReplSet",
+      "--bind_ip_all",
+      "--port", "27019"]
+    volumes:
+      - config_server_data:/data/configdb
+    ports:
+      - 27019:27019
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.10
+
+  shard1:
+    container_name: shard1
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: >
+      mongod --shardsvr
+             --replSet shard1ReplSet
+             --port 27018
+             --bind_ip_all
+    volumes:
+      - shard1_data:/data/db
+    ports:
+      - 27018:27018
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.9
+
+  shard2:
+    container_name: shard2
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command: >
+      mongod --shardsvr
+             --replSet shard2ReplSet
+             --port 27017
+             --bind_ip_all
+    volumes:
+      - shard2_data:/data/db
+    ports:
+      - 27017:27017
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.8
+
+  router:
+    container_name: router
+    image: dh-mirror.gitverse.ru/mongo:latest
+    command:
+      [
+      "mongos",
+      "--configdb", "configReplSet/config_server:27019",
+      "--bind_ip_all",
+      "--port",
+      "27020"
+      ]
+    depends_on:
+      - config_server
+      - shard1
+      - shard2
+    ports:
+      - "27020:27020"
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.7
+
+  pymongo_api:
+    container_name: pymongo_api
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    image: kazhem/pymongo_api:1.0.0
+    depends_on:
+      - router
+    ports:
+      - 8080:8080
+    networks:
+      app-network:
+        ipv4_address: 173.17.0.6
+    environment:
+      MONGODB_URL: "mongodb://router:27020/somedb"
+      MONGODB_DATABASE_NAME: "somedb"
+
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 173.17.0.0/16
+
+volumes:
+  config_server_data:
+  shard1_data:
+  shard2_data:
