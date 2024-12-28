@@ -7,6 +7,11 @@
 ```shell
 ./scripts/mongo-sharding-repl-init.sh
 ```
+### Альтернативный сценарий запуска
+В случае недоступности приложения после исполнения скрипта по адресам:
+http://localhost:8080/ , http://localhost:8080/helloDoc/user , выполнить команды,
+находящиеся в скрипте, вручную, добавляя к командам флаг -it вместо i,
+например - 'docker exec -it config_server mongosh --port 27019'
 
 ## Как проверить
 

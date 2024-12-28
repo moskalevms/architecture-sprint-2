@@ -2,7 +2,7 @@ name: mongo-sharding
 services:
   config_server:
     container_name: config_server
-    image: dh-mirror.gitverse.ru/mongo:latest
+    image: mongo:latest
     command: [
       "mongod", "--configsvr",
       "--replSet", "configReplSet",
@@ -18,7 +18,7 @@ services:
 
   shard1:
     container_name: shard1
-    image: dh-mirror.gitverse.ru/mongo:latest
+    image: mongo:latest
     command: >
       mongod --shardsvr
              --replSet shard1ReplSet
@@ -34,7 +34,7 @@ services:
 
   shard2:
     container_name: shard2
-    image: dh-mirror.gitverse.ru/mongo:latest
+    image: mongo:latest
     command: >
       mongod --shardsvr
              --replSet shard2ReplSet
@@ -50,7 +50,7 @@ services:
 
   router:
     container_name: router
-    image: dh-mirror.gitverse.ru/mongo:latest
+    image: mongo:latest
     command:
       [
       "mongos",
@@ -59,10 +59,6 @@ services:
       "--port",
       "27020"
       ]
-    depends_on:
-      - config_server
-      - shard1
-      - shard2
     ports:
       - "27020:27020"
     networks:
@@ -75,8 +71,6 @@ services:
       context: api_app
       dockerfile: Dockerfile
     image: kazhem/pymongo_api:1.0.0
-    depends_on:
-      - router
     ports:
       - 8080:8080
     networks:
